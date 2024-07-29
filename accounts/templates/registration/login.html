@@ -1,9 +1,9 @@
 {% extends "base_generic.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-<div class="container">
+<div class="container mt-5">
 
-  <h2>Login to the Fitness Appi</h2>
+  <h2>Login to LadyWarcraft's Fitness App</h2>
   <form method="post">
     {% csrf_token %}
     {{ form|crispy }}

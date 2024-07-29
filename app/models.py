@@ -1,5 +1,8 @@
+from django.db.models import JSONField
 from django.db import models
 import uuid
+
+from django.urls import reverse
 
 from src import settings
 
@@ -40,7 +43,7 @@ class Exercise(models.Model):
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
     primary_muscle_focus = models.ForeignKey(Muscle, related_name='primary_exercises', on_delete=models.CASCADE)
-    secondary_muscle_focus = models.ForeignKey(Muscle, related_name='secondary_exercises', on_delete=models.CASCADE)
+    secondary_muscle_focus = models.ForeignKey(Muscle, related_name='secondary_exercises', on_delete=models.CASCADE, blank=True, null=True)
     equipment = models.ManyToManyField(Equipment, blank=True)
     CHOICES = (
         ('Cardio', 'Cardio'),
@@ -59,5 +62,28 @@ class Exercise(models.Model):
     class Meta:
         ordering = ['type', 'name']
         
+    def __str__(self):
+        return self.name
+    
+
+class TrainingPlan(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150)
+    description = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Created by"
+        )
+    exercises = JSONField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['name']
+        
+    def get_absolute_url(self):
+        return reverse('training_plan_detail', args=[str(self.id)])
+    
     def __str__(self):
         return self.name

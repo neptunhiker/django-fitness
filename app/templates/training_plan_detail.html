@@ -1,0 +1,47 @@
+{% extends 'base_generic.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<style>
+  .form-text {
+    color: grey;
+  }
+</style>
+<div class="container mt-5">
+  <h1><i class="fas fa-dumbbell"></i> {{ trainingplan.name }}</h1>
+  <p>{{ trainingplan.description }}</p>
+  <hr>
+  <div id="exercises-list">
+    {% if trainingplan.exercises %}
+    {% include 'snippet_tp_exercises.html' %}
+    {% else %}
+    <p class="text-secondary">No exercises have been added to the training plan yet</p>
+    {% endif %}
+  </div>
+</div>
+<div class="container my-4">
+  <div class="row align-items-center justify-content-between">
+    <div class="col-12 col-md-12 py-3 ps-3 shadow rounded">
+      <form method="post" hx-post="{% url 'add_exercise' trainingplan.pk %}" hx-target="#exercises-list"
+      hx-trigger="submit" hx-boost="true">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-4">
+          {{ form.exercise|as_crispy_field }}
+          {{ form.starting_repetitions|as_crispy_field }}
+        </div>
+        <div class="col-md-4">
+          {{ form.repetition_progression_per_week|as_crispy_field }}
+          {{ form.starting_weight|as_crispy_field }}
+        </div>
+        <div class="col-md-4">
+          {{ form.weight_progression_per_week|as_crispy_field }}
+        </div>
+      </div>
+      <div class="text-end">
+        <button type="submit" class="btn btn-success">Add Exercise</button>
+      </div>
+    </form>
+  </div>
+  </div>
+</div>
+{% endblock %}

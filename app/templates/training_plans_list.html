@@ -1,0 +1,10 @@
+{% extends 'base_generic.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h1>Training Plans</h1>
+  <hr>
+  {% for trainingplan in trainingplan_list %}
+  <h2><a href="{{ trainingplan.get_absolute_url }}"><i class="fas fa-dumbbell"></i> {{ trainingplan.name }}</a></h2>
+  {% endfor %}
+</div>
+{% endblock %}

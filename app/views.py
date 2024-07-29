@@ -2,6 +2,8 @@ from typing import Any
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import TemplateView, ListView, DetailView
 from django.http import JsonResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 
 from .import models, forms
 # Create your views here.
@@ -9,11 +11,11 @@ class HomeView(TemplateView):
     template_name = 'home.html'
     
     
-class TrainingPlansListView(ListView):
+class TrainingPlansListView(LoginRequiredMixin, ListView):
     model = models.TrainingPlan
     template_name = 'training_plans_list.html'
     
-class TrainingPlanDetailView(DetailView):
+class TrainingPlanDetailView(LoginRequiredMixin, DetailView):
     model = models.TrainingPlan
     template_name = 'training_plan_detail.html'
     
@@ -32,7 +34,7 @@ class TrainingPlanDetailView(DetailView):
         return context
     
 
-
+@login_required
 def add_exercise(request, pk):
     if request.method == 'POST':
         form = forms.AddExerciseForm(request.POST)
@@ -66,6 +68,7 @@ def add_exercise(request, pk):
 
 from django.http import HttpResponse
 
+@login_required
 def delete_exercise(request, pk, exercise_name):
     if request.method == 'POST':
         training_plan = models.TrainingPlan.objects.get(pk=pk)

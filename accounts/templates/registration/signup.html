@@ -1,12 +1,16 @@
 {% extends "base_generic.html" %}
+{% load crispy_forms_tags %}
 
 {% block title %}Signup{% endblock %}
 
 {% block content %}
-  <h2>Signup</h2>
+<div class="container">
+
+  <h2>Signup for the LadyWarcraft's Fitness App</h2>
   <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Signup</button>
+    {{ form|crispy }}
+    <button class="btn btn-success" type="submit">Signup</button>
   </form>
+</div>
 {% endblock %}

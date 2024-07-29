@@ -1,5 +1,19 @@
 {% extends 'base_generic.html' %}
 {% block content %}
-  <h2>Home</h2>
-  <p>Welcome to the Home Page</p>
+<div class="container">
+
+  {% if user.is_authenticated %}
+  <div class="text-center mt-5">
+    <h2>LadyWarcraft Fitness App</h2>
+    <p>Welcome {{ request.user }}</p>
+  </div>
+    {% else %}
+  <div class="text-center mt-5">
+
+    <p class="fw-bold">Please login or signup to continue</p>
+    <a href="{% url 'login' %}" class="btn btn-success">Login</a>
+    <a href="{% url 'accounts:signup' %}" class="btn btn-outline-secondary">Signup</a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

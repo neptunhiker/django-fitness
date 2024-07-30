@@ -1,8 +1,12 @@
+import datetime 
 from django.db.models import JSONField
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.urls import reverse
+
 import uuid
 
-from django.urls import reverse
 
 from src import settings
 
@@ -87,3 +91,131 @@ class TrainingPlan(models.Model):
     
     def __str__(self):
         return self.name
+    
+class TrainingSchedule(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    athlete = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    notes = models.TextField(blank=True, null=True, help_text="Add any additional notes for the training schedule if you wish to do so")
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    training_plan = models.ForeignKey(TrainingPlan, on_delete=models.CASCADE, help_text="Select the training plan to be used for the training schedule")
+    start_date = models.DateField(help_text="Start date of the training schedule")
+    duration = models.PositiveIntegerField(help_text="Duration in weeks")
+    CHOICES = (
+        ('Monday', 'Monday'),
+        ('Tuesday', 'Tuesday'),
+        ('Wednesday', 'Wednesday'),
+        ('Thursday', 'Thursday'),    
+        ('Friday', 'Friday'),
+        ('Saturday', 'Saturday'),    
+        ('Sunday', 'Sunday'),
+    )
+    train_on_mondays = models.BooleanField(default=False, help_text="Decide whether Monday shall be a training day")
+    train_on_tuesdays = models.BooleanField(default=False, help_text="Decide whether Tuesday shall be a training day")
+    train_on_wednesdays = models.BooleanField(default=False, help_text="Decide whether Wednesday shall be a training day")
+    train_on_thursdays = models.BooleanField(default=False, help_text="Decide whether Thursday shall be a training day")
+    train_on_fridays = models.BooleanField(default=False, help_text="Decide whether Friday shall be a training day")
+    train_on_saturdays = models.BooleanField(default=False, help_text="Decide whether Saturday shall be a training day")
+    train_on_sundays = models.BooleanField(default=False, help_text="Decide whether Sunday shall be a training day")
+    target_activities = JSONField(blank=True, null=True)
+    actual_activities = JSONField(blank=True, null=True)
+    
+
+    def get_training_week(self, date:datetime.date) -> int:
+        """Function that returns the training week number based on the start date and the given date"""
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+        
+        delta = date - self.start_date
+        return delta.days // 7 + 1
+    
+    def _add_target_activities(self):
+        """Function that adds the target activities for the entire duration of the training schedule based on the exercises of the underlying training plan"""
+        if self.target_activities is None:
+            self.target_activities = dict()
+            
+        delta = datetime.timedelta(days=1)
+        current_date = self.start_date
+        while current_date <= self.end_date:
+            if not self.is_training_day(current_date):
+                # not a training day
+                target = dict()
+                for exercise_name in self.training_plan.exercises.keys():
+                    target[exercise_name] = [0, 0]
+                self.target_activities[current_date.isoformat()] = target
+            else:
+                # training day
+                target = dict()
+                training_week = self.get_training_week(current_date)
+                for exercise_name, values in self.training_plan.exercises.items():
+                    starting_reps = values[0]
+                    repetition_progression_per_week = values[1]
+                    target_reps = starting_reps + (training_week - 1) * repetition_progression_per_week
+                    starting_weight = values[2]
+                    weight_progression_per_week = values[3]
+                    target_weight = starting_weight + (training_week - 1) * weight_progression_per_week
+                    target[exercise_name] = [target_reps, target_weight]
+                self.target_activities[current_date.isoformat()] = target
+            
+            current_date += delta
+        
+        self.save()
+        
+    def get_target_activity_absolute(self, date:datetime.date, exercise_name:str) -> list:
+        """Function that returns the target repetitions and weight for the given date and exercise"""
+        if exercise_name not in self.training_plan.exercises.keys():
+            raise ValueError("Given exercise is not part of the training plan")
+        
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+        
+        return self.target_activities[date.isoformat()][exercise_name]
+    
+    def get_target_repetitions_cumulative(self, date:datetime.date, exercise_name:str) -> list:
+        """Function that returns the target repetitions for the given date and exercise"""
+        if exercise_name not in self.training_plan.exercises.keys():
+            raise ValueError("Given exercise is not part of the training plan")
+        
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+        
+        reps = 0
+        for target_date in self.target_activities.keys():
+            target_date = datetime.date.fromisoformat(target_date)
+            if target_date <= date:
+                reps += self.get_target_activity_absolute(target_date, exercise_name)[0]
+            
+        return reps
+    
+    
+            
+    def get_training_days(self):
+        """Get a list of boolean values for each day of the week depending on whether it is a training day or not"""
+        return [self.train_on_mondays, self.train_on_tuesdays, self.train_on_wednesdays, self.train_on_thursdays, self.train_on_fridays, self.train_on_saturdays, self.train_on_sundays]
+    
+    def is_training_day(self, date: datetime.date) -> bool:
+        """Function that checks whether the given date is a training day or not"""
+        weekday = date.weekday()
+        if date < self.start_date or date > self.end_date:
+            return False
+        
+        if not self.get_training_days()[weekday]:
+            return False
+
+        return True
+    
+    @property
+    def end_date(self):
+        return self.start_date + datetime.timedelta(days=self.duration * 7)
+    
+    class Meta:
+        ordering = ['-start_date']
+        
+    def __str__(self):
+        return f"Training Schedule based on '{self.training_plan.name}' - {self.start_date}"
+    
+# This method will be called after a TrainingSchedule instance is saved
+@receiver(post_save, sender=TrainingSchedule)
+def add_target_activities(sender, instance, created, **kwargs):
+    if created:
+        instance._add_target_activities()

@@ -10,6 +10,14 @@ from .import models, forms
 class HomeView(TemplateView):
     template_name = 'home.html'
     
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            context['training_schedules'] = models.TrainingSchedule.objects.filter(athlete=self.request.user)
+        else:
+            context['training_schedules'] = models.TrainingSchedule.objects.none()
+        return context
+    
     
 class TrainingPlansListView(LoginRequiredMixin, ListView):
     model = models.TrainingPlan
@@ -51,7 +59,6 @@ def add_exercise(request, pk):
                 training_plan.exercises = {}
             training_plan.exercises[exercise.name] = [float(starting_repetitions), float(repetition_progression_per_week), float(starting_weight), float(weight_progression_per_week)]
             training_plan.save()
-            print("Exercise added successfully")
             training_plan = models.TrainingPlan.objects.get(pk=pk)
             equipment_list = []
             for exercise_name, values in training_plan.exercises.items():
@@ -83,3 +90,4 @@ def delete_exercise(request, pk, exercise_name):
                     equipment_list.append(equipment.name)
           
     return render(request, 'snippet_tp_exercises.html', {'trainingplan': training_plan, 'equipment': equipment_list})
+

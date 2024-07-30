@@ -1,9 +1,14 @@
+from datetime import datetime, timedelta
 from typing import Any
+
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import TemplateView, ListView, DetailView
-from django.http import JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.views import View
+from django.template.loader import render_to_string
+
 
 from .import models, forms
 # Create your views here.
@@ -91,3 +96,24 @@ def delete_exercise(request, pk, exercise_name):
           
     return render(request, 'snippet_tp_exercises.html', {'trainingplan': training_plan, 'equipment': equipment_list})
 
+class TrainingScheduleDetailView(DetailView):
+    model = models.TrainingSchedule
+    template_name = 'training_schedule_detail.html'
+    
+class GetTrainingScheduleAnalysisView(View):
+    def get(self, request, *args, **kwargs):
+        training_schedule = models.TrainingSchedule.objects.get(pk=kwargs['pk'])
+        selected_date = request.GET.get('date')
+        if selected_date is None:
+            # Handle the error, for example by returning an HTTP 400 response
+            return HttpResponseBadRequest("Missing 'date' parameter")
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+
+        # Get the target activities for the selected date, the day before, and the day after
+        target_activities = training_schedule.get_all_target_activities(date=selected_date)
+        
+        # Format the target activities into HTML
+        target_activities_html = render_to_string('target_activities.html', {'target_activities': target_activities})
+
+        # Return the target activities as an HTML response
+        return HttpResponse(target_activities_html)

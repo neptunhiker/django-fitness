@@ -12,4 +12,5 @@ urlpatterns = [
     path('record_strength_activity/<uuid:pk>/', views.RecordStrengthActivityView.as_view(), name='record_strength_activity'),
     path('record_isometric_activity/<uuid:pk>/', views.RecordIsometricActivityView.as_view(), name='record_isometric_activity'),
     path('record_cardio_activity/<uuid:pk>/', views.RecordCardioActivityView.as_view(), name='record_cardio_activity'),
+    path('exercise_detail/<uuid:pk>/', views.ExerciseDetailView.as_view(), name='exercise_detail'),
 ]

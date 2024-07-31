@@ -13,9 +13,9 @@
       </tr>
     </thead>
     <tbody>
-      {% for exercise_name, values in target_vs_actual_absolute.items %}
+      {% for exercise, values in target_vs_actual_absolute.items %}
       <tr>
-        <td>{{ exercise_name }}</td>
+        <td><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></td>
         <td class="text-center {% if values.0.0 < 0 %}text-danger{% endif %}">{{ values.0.0|floatformat:"0" }}</td>
         <td class="text-center {% if values.0.1 < 0 %}text-danger{% endif %}">{{ values.0.1|floatformat:"-1" }}</td>
         <td class="text-center {% if values.1.0 < 0 %}text-danger{% endif %}">{{ values.1.0|floatformat:"0" }}</td>

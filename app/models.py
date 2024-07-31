@@ -21,6 +21,7 @@ class Muscle(models.Model):
         ('Arms', 'Arms'),
         ('Shoulders', 'Shoulders'),
         ('Core', 'Core'),
+        ('Full Body', 'Full Body'),
     )
     muscle_group = models.CharField(max_length=150, choices=CHOICES)
 
@@ -69,6 +70,49 @@ class Exercise(models.Model):
     def __str__(self):
         return self.name
     
+    
+class Activity(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    date = models.DateField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    athlete = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Executed by"
+        )
+    
+class StrengthActivity(Activity):
+    reps = models.IntegerField()
+    weight = models.IntegerField()
+    
+    class Meta:
+        ordering = ['-date', 'exercise']
+        verbose_name_plural = 'Strength activities'
+        
+    def __str__(self):
+        return f"Strength activity for {self.exercise.name} - {self.reps} reps - {self.weight} kg"
+    
+class IsometricActivity(Activity):
+    duration = models.IntegerField(help_text="Duration in seconds")
+    
+    class Meta:
+        ordering = ['-date', 'exercise']
+        verbose_name_plural = 'Isometric activities'
+        
+    def __str__(self):
+        return f"Isometric activity for {self.exercise.name} - {self.duration} seconds hold"
+    
+class CardioActivity(Activity):
+    duration = models.IntegerField(help_text="Duration in seconds")
+    
+    class Meta:
+        ordering = ['-date', 'exercise']
+        verbose_name_plural = 'Cardio activities'
+        
+    def __str__(self):
+        return f"Cardio activity for {self.exercise.name} - {self.duration} seconds"
 
 class TrainingPlan(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -214,28 +258,34 @@ class TrainingSchedule(models.Model):
 
         return True
     
-    def record_activity(self, date: datetime.date, exercise_name:str, repetitions:int, weight:float):
-        """Function that records the actual activity for the given exercise"""
+    def record_activity(self, activity: Activity):
+        """Function that records the actual activity"""
+        if self.athlete != activity.athlete:
+            raise ValueError("The athlete who performed the activity does not match the athlete of the training schedule")
+        
+        date = activity.date
         if date < self.start_date or date > self.end_date:
             raise ValueError("Given date is outside the training schedule")
-        
-        if exercise_name not in self.training_plan.exercises.keys():
-            raise ValueError("Given exercise is not part of the training plan")
-        
-        if self.actual_activities is None:
-            self.actual_activities = dict()
-        
-        if date.isoformat() not in self.actual_activities.keys():
-            self.actual_activities[date.isoformat()] = dict()
-            self.actual_activities[date.isoformat()][exercise_name] = [repetitions, weight]
+
+        exercise_name = activity.exercise.name
+        if isinstance(activity, StrengthActivity):
+            reps_or_duration = float(activity.reps)
+            weight = float(activity.weight)
+        elif isinstance(activity, CardioActivity) or isinstance(activity, IsometricActivity):
+            reps_or_duration = float(activity.duration)
+            weight = 0.0
         else:
-            recorded_activities = self.actual_activities[date.isoformat()]
-            recorded_activities[exercise_name] = [repetitions, weight]
-            self.actual_activities[date.isoformat()] = recorded_activities
-            
+            raise ValueError("Given activity is not a strength, cardio or isometric activity")
+
+        self.actual_activities = self.actual_activities or {}
+
+        date_key = date.isoformat()
+        self.actual_activities.setdefault(date_key, {})
+        self.actual_activities[date_key][exercise_name] = [reps_or_duration, weight]
+
         self.save()
         
-        # to be continued: write a view and template that allows the user to record an activity. The view should change immediately to that date such that the user can see the actual vs the target activities for that date on a cumulative scale but also on an absolute scale
+        # to be continued: write a view and template that allows the user to record an activity. The view should change immediately to that date such that the user can see the actual vs the target activities for that date on a cumulative scale but also on an absolute scale. Before you start, sketch out on paper on how the template shall look like.
     
     @property
     def end_date(self):

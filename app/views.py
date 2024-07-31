@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any
 
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import TemplateView, ListView, DetailView
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -100,6 +100,7 @@ class TrainingScheduleDetailView(DetailView):
     model = models.TrainingSchedule
     template_name = 'training_schedule_detail.html'
     
+    
 class GetTrainingScheduleAnalysisView(View):
     def get(self, request, *args, **kwargs):
         training_schedule = models.TrainingSchedule.objects.get(pk=kwargs['pk'])
@@ -117,3 +118,97 @@ class GetTrainingScheduleAnalysisView(View):
 
         # Return the target activities as an HTML response
         return HttpResponse(target_activities_html)
+    
+
+class RecordStrengthActivityView(TemplateView):
+    template_name = 'strength_activity_create.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = forms.RecordStrengthActivityForm()
+        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=kwargs["pk"])
+        return context
+
+    def post(self, request, **kwargs):
+        form = forms.RecordStrengthActivityForm(self.request.POST)
+        if form.is_valid():
+            training_schedule = models.TrainingSchedule.objects.get(pk=self.kwargs['pk'])
+            athlete = self.request.user
+            exercise = form.cleaned_data['exercise']
+            date = form.cleaned_data['date']
+            repetitions = form.cleaned_data['repetitions']
+            weight = form.cleaned_data['weight']
+
+            activity = models.StrengthActivity.objects.create(
+                exercise=exercise, 
+                date=date, 
+                athlete=athlete, 
+                reps=repetitions, 
+                weight=weight
+            )
+            training_schedule.record_activity(activity)
+
+            return redirect('home')
+
+        return self.render_to_response(self.get_context_data(form=form))
+    
+class RecordIsometricActivityView(TemplateView):
+    template_name = 'isometric_activity_create.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = forms.RecordIsometricActivityForm()
+        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=kwargs["pk"])
+        return context
+
+    def post(self, request, **kwargs):
+        form = forms.RecordIsometricActivityForm(self.request.POST)
+        if form.is_valid():
+            training_schedule = models.TrainingSchedule.objects.get(pk=self.kwargs['pk'])
+            athlete = self.request.user
+            exercise = form.cleaned_data['exercise']
+            date = form.cleaned_data['date']
+            duration = form.cleaned_data['duration']
+
+            activity = models.IsometricActivity.objects.create(
+                exercise=exercise, 
+                date=date, 
+                athlete=athlete, 
+                duration=duration, 
+            )
+            training_schedule.record_activity(activity)
+
+            return redirect('home')
+
+        return self.render_to_response(self.get_context_data(form=form))
+    
+
+class RecordCardioActivityView(TemplateView):
+    template_name = 'cardio_activity_create.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = forms.RecordCardioActivityForm()
+        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=kwargs["pk"])
+        return context
+
+    def post(self, request, **kwargs):
+        form = forms.RecordCardioActivityForm(self.request.POST)
+        if form.is_valid():
+            training_schedule = models.TrainingSchedule.objects.get(pk=self.kwargs['pk'])
+            athlete = self.request.user
+            exercise = form.cleaned_data['exercise']
+            date = form.cleaned_data['date']
+            duration = form.cleaned_data['duration']
+
+            activity = models.CardioActivity.objects.create(
+                exercise=exercise, 
+                date=date, 
+                athlete=athlete, 
+                duration=duration, 
+            )
+            training_schedule.record_activity(activity)
+
+            return redirect('home')
+
+        return self.render_to_response(self.get_context_data(form=form))

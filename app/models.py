@@ -334,6 +334,23 @@ class TrainingSchedule(models.Model):
         
         return [calendar.day_name[i] for i, day in enumerate(self.get_training_days()) if day]
     
+    def get_number_of_recorded_activities(self):
+        """Get the number of recorded activities"""
+        recorded_activities = 0
+        for date, values in self.actual_activities.items():
+            for exercise_name in values.keys():
+                recorded_activities += 1
+        return recorded_activities
+    
+    def get_unique_exercises_recorded(self) -> list:
+        """Get a list of unique exercises that are recorded"""
+        unique_exercises = []
+        for date, values in self.actual_activities.items():
+            for exercise_name in values.keys():
+                if exercise_name not in unique_exercises:
+                    unique_exercises.append(exercise_name)
+        return unique_exercises
+    
     def is_training_day(self, date: datetime.date) -> bool:
         """Function that checks whether the given date is a training day or not"""
         weekday = date.weekday()

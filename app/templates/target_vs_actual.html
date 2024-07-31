@@ -1,3 +1,8 @@
+{{ trainingschedule.end_date }}
+{% if date_warning %}
+<div class="alert alert-warning mt-0 my-5" role="alert">Attention: the selected date ({{ date|date:"d F y" }}) is outside the planned training schedule</div>
+</div>
+{% endif %}
 <h3 class="fw-bold">Target vs. Actual (absolute)</h3>
 <div class="table-responsive">
   <table class="table table-dark">

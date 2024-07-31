@@ -140,13 +140,17 @@ class GetTrainingScheduleAnalysisView(View):
             return HttpResponseBadRequest("Missing 'date' parameter")
         
         selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        if selected_date < training_schedule.start_date or selected_date > training_schedule.end_date:
+            date_warning = True
+        else:
+            date_warning = False
 
         # Get the activities for the selected date
         target_vs_actual_absolute = training_schedule.get_target_vs_actual_absolute(selected_date)
         target_vs_actual_cumulative = training_schedule.get_target_vs_actual_cumulative(selected_date)
         
         # Format the target activities into HTML
-        target_activities_html = render_to_string('target_vs_actual.html', {'target_vs_actual_absolute': target_vs_actual_absolute, 'target_vs_actual_cumulative': target_vs_actual_cumulative})
+        target_activities_html = render_to_string('target_vs_actual.html', {'target_vs_actual_absolute': target_vs_actual_absolute, 'target_vs_actual_cumulative': target_vs_actual_cumulative, 'date': selected_date, "date_warning": date_warning, "training_schedule": training_schedule})
 
         # Return the target activities as an HTML response
         return HttpResponse(target_activities_html)

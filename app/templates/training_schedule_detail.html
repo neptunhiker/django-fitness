@@ -19,11 +19,14 @@
     <div class="h2 custom-sub-header">Workout Analysis</div>
     <div class="my-5">
       <div class="h3 fw-bold">Select a date</div>
-      <form id="dateForm" hx-get="{% url 'get-target-activities' trainingschedule.id %}" hx-trigger="change" hx-target="#targetActivities" class="form-group">
-        {% csrf_token %}
-        <label for="datePicker" class="form-label">Select Date:</label>
-        <input type="date" id="datePicker" name="date" class="form-control">
-      </form>
+      <div class="col-8 col-md-3 col-lg-2">
+
+        <form id="dateForm" hx-get="{% url 'get-target-activities' trainingschedule.id %}" hx-trigger="change" hx-target="#targetActivities" class="form-group">
+          {% csrf_token %}
+          <label for="datePicker" class="form-label">Select Date:</label>
+          <input type="date" id="datePicker" name="date" class="form-control">
+        </form>
+      </div>
     </div>
     <div id="targetActivities">
       <!-- Target activities will be loaded here -->

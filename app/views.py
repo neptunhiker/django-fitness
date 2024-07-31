@@ -38,12 +38,13 @@ class TrainingPlanDetailView(LoginRequiredMixin, DetailView):
         context['exercises'] = models.Exercise.objects.all()
         training_plan = get_object_or_404(models.TrainingPlan, pk=self.kwargs['pk'])
         equipment_list = []
-        for exercise_name, values in training_plan.exercises.items():
-            exercise = models.Exercise.objects.get(name=exercise_name)
-            for equipment in exercise.equipment.all():
-                if equipment not in equipment_list:
-                    equipment_list.append(equipment.name)
-        context['equipment'] = equipment_list
+        if training_plan.exercises is not None:
+            for exercise_name, values in training_plan.exercises.items():
+                exercise = models.Exercise.objects.get(name=exercise_name)
+                for equipment in exercise.equipment.all():
+                    if equipment not in equipment_list:
+                        equipment_list.append(equipment.name)
+            context['equipment'] = equipment_list
         return context
     
 
@@ -100,6 +101,16 @@ class TrainingScheduleDetailView(DetailView):
     model = models.TrainingSchedule
     template_name = 'training_schedule_detail.html'
     
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        training_schedule = get_object_or_404(models.TrainingSchedule, pk=self.kwargs['pk'])
+        date = datetime.today().date()
+        target_vs_actual_absolute = training_schedule.get_target_vs_actual_absolute(date)
+        target_vs_actual_cumulative = training_schedule.get_target_vs_actual_cumulative(date)
+        context['target_vs_actual_absolute'] = target_vs_actual_absolute
+        context['target_vs_actual_cumulative'] = target_vs_actual_cumulative
+        return context
+    
     
 class GetTrainingScheduleAnalysisView(View):
     def get(self, request, *args, **kwargs):
@@ -108,13 +119,15 @@ class GetTrainingScheduleAnalysisView(View):
         if selected_date is None:
             # Handle the error, for example by returning an HTTP 400 response
             return HttpResponseBadRequest("Missing 'date' parameter")
+        
         selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
 
-        # Get the target activities for the selected date, the day before, and the day after
-        target_activities = training_schedule.get_all_target_activities(date=selected_date)
+        # Get the activities for the selected date
+        target_vs_actual_absolute = training_schedule.get_target_vs_actual_absolute(selected_date)
+        target_vs_actual_cumulative = training_schedule.get_target_vs_actual_cumulative(selected_date)
         
         # Format the target activities into HTML
-        target_activities_html = render_to_string('target_activities.html', {'target_activities': target_activities})
+        target_activities_html = render_to_string('target_vs_actual.html', {'target_vs_actual_absolute': target_vs_actual_absolute, 'target_vs_actual_cumulative': target_vs_actual_cumulative})
 
         # Return the target activities as an HTML response
         return HttpResponse(target_activities_html)
@@ -126,7 +139,7 @@ class RecordStrengthActivityView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = forms.RecordStrengthActivityForm()
-        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=kwargs["pk"])
+        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=self.kwargs["pk"])
         return context
 
     def post(self, request, **kwargs):
@@ -148,7 +161,7 @@ class RecordStrengthActivityView(TemplateView):
             )
             training_schedule.record_activity(activity)
 
-            return redirect('home')
+            return redirect('training_schedule_detail', pk=training_schedule.pk)
 
         return self.render_to_response(self.get_context_data(form=form))
     
@@ -158,7 +171,7 @@ class RecordIsometricActivityView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = forms.RecordIsometricActivityForm()
-        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=kwargs["pk"])
+        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=self.kwargs["pk"])
         return context
 
     def post(self, request, **kwargs):
@@ -178,7 +191,7 @@ class RecordIsometricActivityView(TemplateView):
             )
             training_schedule.record_activity(activity)
 
-            return redirect('home')
+            return redirect('training_schedule_detail', pk=training_schedule.pk)
 
         return self.render_to_response(self.get_context_data(form=form))
     
@@ -189,7 +202,7 @@ class RecordCardioActivityView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = forms.RecordCardioActivityForm()
-        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=kwargs["pk"])
+        context["training_schedule"] = models.TrainingSchedule.objects.get(pk=self.kwargs["pk"])
         return context
 
     def post(self, request, **kwargs):
@@ -209,6 +222,6 @@ class RecordCardioActivityView(TemplateView):
             )
             training_schedule.record_activity(activity)
 
-            return redirect('home')
+            return redirect('training_schedule_detail', pk=training_schedule.pk)
 
         return self.render_to_response(self.get_context_data(form=form))

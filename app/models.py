@@ -21,7 +21,7 @@ class Muscle(models.Model):
         ('Arms', 'Arms'),
         ('Shoulders', 'Shoulders'),
         ('Core', 'Core'),
-        ('Full Body', 'Full Body'),
+        ('Full Body', 'Full Body'),#
     )
     muscle_group = models.CharField(max_length=150, choices=CHOICES)
 
@@ -205,19 +205,32 @@ class TrainingSchedule(models.Model):
         self.save()
         
     def get_target_activity_absolute(self, date:datetime.date, exercise_name:str) -> list:
-        """Function that returns the target repetitions and weight for the given date and exercise"""
+        """Function that returns the target repetitions/duration and weight for the given date and exercise"""
         if exercise_name not in self.training_plan.exercises.keys():
-            raise ValueError("Given exercise is not part of the training plan")
+            return [0, 0]
         
         if date < self.start_date or date > self.end_date:
             raise ValueError("Given date is outside the training schedule")
         
         return self.target_activities[date.isoformat()][exercise_name]
     
+    def get_actual_activity_absolute(self, date:datetime.date, exercise_name:str) -> list:
+        """Function that returns the actual repetitions/duration and weight for the given date and exercise"""
+        
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+            
+        if self.actual_activities is not None and date.isoformat() in self.actual_activities.keys():
+            if exercise_name not in self.actual_activities[date.isoformat()].keys():
+                return [0, 0]
+            return self.actual_activities[date.isoformat()][exercise_name]
+        
+        return [0, 0]
+    
     def get_target_repetitions_cumulative(self, date:datetime.date, exercise_name:str) -> list:
         """Function that returns the target repetitions for the given date and exercise"""
         if exercise_name not in self.training_plan.exercises.keys():
-            raise ValueError("Given exercise is not part of the training plan")
+            return 0
         
         if date < self.start_date or date > self.end_date:
             raise ValueError("Given date is outside the training schedule")
@@ -227,6 +240,19 @@ class TrainingSchedule(models.Model):
             target_date = datetime.date.fromisoformat(target_date)
             if target_date <= date:
                 reps += self.get_target_activity_absolute(target_date, exercise_name)[0]
+            
+        return reps
+    
+    def get_actual_repetitions_cumulative(self, date:datetime.date, exercise_name:str) -> list:
+        """Function that returns the actual repetitions for the given date and exercise"""     
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+        
+        reps = 0
+        for target_date in self.actual_activities.keys():
+            target_date = datetime.date.fromisoformat(target_date)
+            if target_date <= date:
+                reps += self.get_actual_activity_absolute(target_date, exercise_name)[0]
             
         return reps
     
@@ -243,6 +269,61 @@ class TrainingSchedule(models.Model):
         
         return target_activities
     
+    def get_all_exercises(self) -> list:
+        """Get a list of all exercises that are part of the training plan or part of the recorded activities"""
+        all_exercises = list(self.training_plan.exercises.keys())
+        if self.actual_activities is not None:
+            for date, values in self.actual_activities.items():
+                for exercise_name in values.keys():
+                    if exercise_name not in all_exercises:
+                        all_exercises.append(exercise_name)
+        return all_exercises
+    
+    def get_target_vs_actual_absolute(self, date:datetime.date) -> dict:
+        """
+        Get a dictionary for each exercise that shows the target vs actual activities on the given date
+        
+        Returns:
+            dict: {exercise_name: [[target_repetitions, target_weight], [actual_repetitions, actual_weight], [gap_repetitions, gap_weight]]}
+        """
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+        
+        target_vs_actual = dict()
+        all_exercises = self.get_all_exercises()
+        
+        
+        for exercise_name in all_exercises:
+            target = self.get_target_activity_absolute(date, exercise_name)  # list[reps/duration, weight]
+            actual = self.get_actual_activity_absolute(date, exercise_name)  # list[reps/duration, weight]
+            gap = [actual[0] - target[0], actual[1] - target[1]]
+            target_vs_actual[exercise_name] = [target, actual, gap]
+        
+        return target_vs_actual
+    
+    def get_target_vs_actual_cumulative(self, date:datetime.date) -> dict:
+        """
+        Get a dictionary for each exercise that shows the target vs actual cumulative activities up to the given date from the start date of the training schedule
+        
+        Returns:
+            dict: {exercise_name: [target_repetitions, actual_repetitions, gap_repetitions]}
+        """
+        if date < self.start_date or date > self.end_date:
+            raise ValueError("Given date is outside the training schedule")
+        
+        target_vs_actual = dict()
+        all_exercises = self.get_all_exercises()
+        
+        
+        for exercise_name in all_exercises:
+            target = self.get_target_repetitions_cumulative(date, exercise_name)  # target reps
+            actual = self.get_actual_repetitions_cumulative(date, exercise_name)  # actual reps
+            gap = actual - target
+            target_vs_actual[exercise_name] = [target, actual, gap]
+        
+        return target_vs_actual
+
+
     def get_training_days(self):
         """Get a list of boolean values for each day of the week depending on whether it is a training day or not"""
         return [self.train_on_mondays, self.train_on_tuesdays, self.train_on_wednesdays, self.train_on_thursdays, self.train_on_fridays, self.train_on_saturdays, self.train_on_sundays]
@@ -284,8 +365,6 @@ class TrainingSchedule(models.Model):
         self.actual_activities[date_key][exercise_name] = [reps_or_duration, weight]
 
         self.save()
-        
-        # to be continued: write a view and template that allows the user to record an activity. The view should change immediately to that date such that the user can see the actual vs the target activities for that date on a cumulative scale but also on an absolute scale. Before you start, sketch out on paper on how the template shall look like.
     
     @property
     def end_date(self):

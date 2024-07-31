@@ -1,24 +1,27 @@
 {% extends 'base_generic.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
-<style>
-  .form-text {
-    color: grey;
-  }
-</style>
-<div class="container mt-5">
-  <h1><i class="fas fa-calendar-check"></i> {{ trainingschedule }}</h1>
-  <form hx-get="{% url 'get-target-activities' trainingschedule.id %}" hx-trigger="change" hx-target="#targetActivities">
-    <input type="date" id="datePicker" name="date">
-  </form>
-  <div id="targetActivities">
-    <!-- Target activities will be loaded here -->
-  </div>
-</div>
-
-
 <section>
+  <div class="container mt-5">
+    <h1><i class="fas fa-calendar-check"></i> {{ trainingschedule }}</h1>
+    <div class="my-5">
+      <div>Select a date</div>
+      <form id="dateForm" hx-get="{% url 'get-target-activities' trainingschedule.id %}" hx-trigger="change" hx-target="#targetActivities">
+        {% csrf_token %}
+        <input type="date" id="datePicker" name="date">
+      </form>
+    </div>
+    <div id="targetActivities">
+      <!-- Target activities will be loaded here -->
+      {% include 'target_vs_actual.html' %}
+    </div>
+  </div>
+</section>
+
+
+<section class="my-5">
   <div class="container">
+    <hr>
     <div class="row justify-content-center">
       <div class="col-12 col-md-4 text-center h1"><i class="fas fa-dumbbell"></i> </div>
       <div class="col-12 col-md-4 text-center h1"><i class="fas fa-hourglass-half"></i> </div>
@@ -32,5 +35,10 @@
   </div>
 </section>
 
-
+<script>
+window.onload = function() {
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('datePicker').value = today;
+};
+</script>
 {% endblock %}

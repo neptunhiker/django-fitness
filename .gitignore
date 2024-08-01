@@ -86,3 +86,6 @@ cython_debug/
 
 # Github
 .github/
+
+# Other
+.DS_Store

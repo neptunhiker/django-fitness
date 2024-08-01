@@ -21,22 +21,26 @@
         <th class="text-center" scope="col">Repetition Progression per Week</th>
         <th class="text-center" scope="col">Starting Weight</th>
         <th class="text-center" scope="col">Weight Progression per Week</th>
-        <th class="text-center"></th>
+        {% if request.user == trainingplan.author %}
+          <th class="text-center"></th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
-      {% for key, value in trainingplan.exercises.items %}
+      {% for exercise, value in exercises.items %}
       <tr>
-        <td>{{ key }}</td>
+        <td><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></td>
         <td class="text-center">{{ value.0|floatformat:"-1" }}</td>
         <td class="text-center">{{ value.1|floatformat:"-1" }}</td>
         <td class="text-center">{{ value.2|floatformat:"-1" }}</td>
         <td class="text-center">{{ value.3|floatformat:"-1" }}</td>
+        {% if request.user == trainingplan.author %}
         <td class="text-center">
-          <a href="#" role="button" hx-post="{% url 'delete_exercise' trainingplan.pk key %}" hx-target="#exercises-list"  hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
+          <a href="#" role="button" hx-post="{% url 'delete_exercise' trainingplan.pk exercise.name %}" hx-target="#exercises-list"  hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
             <i class="fas fa-trash-alt text-danger"></i>
           </a>
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

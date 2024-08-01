@@ -1,3 +1,8 @@
+{{ trainingschedule.end_date }}
+{% if date_warning %}
+<div class="alert alert-warning mt-0 my-5" role="alert">Attention: the selected date ({{ date|date:"d F y" }}) is outside the planned training schedule</div>
+</div>
+{% endif %}
 <h3 class="fw-bold">Target vs. Actual (absolute)</h3>
 <div class="table-responsive">
   <table class="table table-dark">
@@ -13,9 +18,9 @@
       </tr>
     </thead>
     <tbody>
-      {% for exercise_name, values in target_vs_actual_absolute.items %}
+      {% for exercise, values in target_vs_actual_absolute.items %}
       <tr>
-        <td>{{ exercise_name }}</td>
+        <td><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></td>
         <td class="text-center {% if values.0.0 < 0 %}text-danger{% endif %}">{{ values.0.0|floatformat:"0" }}</td>
         <td class="text-center {% if values.0.1 < 0 %}text-danger{% endif %}">{{ values.0.1|floatformat:"-1" }}</td>
         <td class="text-center {% if values.1.0 < 0 %}text-danger{% endif %}">{{ values.1.0|floatformat:"0" }}</td>

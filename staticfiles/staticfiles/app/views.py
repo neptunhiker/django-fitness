@@ -8,6 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.views import View
 from django.template.loader import render_to_string
+from django.db.models import Q
 
 
 from .import models, forms
@@ -45,6 +46,13 @@ class TrainingPlanDetailView(LoginRequiredMixin, DetailView):
                     if equipment not in equipment_list:
                         equipment_list.append(equipment.name)
             context['equipment'] = equipment_list
+            
+            exercises = dict()
+            for exercise_name, values in training_plan.exercises.items():
+                exercise = models.Exercise.objects.get(name=exercise_name)
+                exercises[exercise] = values
+            context['exercises'] = exercises
+        
         return context
     
 
@@ -72,7 +80,13 @@ def add_exercise(request, pk):
                 for equipment in exercise.equipment.all():
                     if equipment not in equipment_list:
                         equipment_list.append(equipment.name)
-            return render(request, 'snippet_tp_exercises.html', {'form': form, 'trainingplan': training_plan, 'equipment': equipment_list})
+            
+            exercises = dict()
+            for exercise_name, values in training_plan.exercises.items():
+                exercise = models.Exercise.objects.get(name=exercise_name)
+                exercises[exercise] = values
+            
+            return render(request, 'snippet_tp_exercises.html', {'form': form, 'trainingplan': training_plan, 'equipment': equipment_list, 'exercises': exercises})
         else:
             return JsonResponse({'errors': form.errors}, status=400)
     else:
@@ -94,8 +108,13 @@ def delete_exercise(request, pk, exercise_name):
             for equipment in exercise.equipment.all():
                 if equipment not in equipment_list:
                     equipment_list.append(equipment.name)
+                    
+        exercises = dict()
+        for exercise_name, values in training_plan.exercises.items():
+            exercise = models.Exercise.objects.get(name=exercise_name)
+            exercises[exercise] = values
           
-    return render(request, 'snippet_tp_exercises.html', {'trainingplan': training_plan, 'equipment': equipment_list})
+    return render(request, 'snippet_tp_exercises.html', {'trainingplan': training_plan, 'equipment': equipment_list, 'exercises': exercises})
 
 class TrainingScheduleDetailView(DetailView):
     model = models.TrainingSchedule
@@ -121,13 +140,17 @@ class GetTrainingScheduleAnalysisView(View):
             return HttpResponseBadRequest("Missing 'date' parameter")
         
         selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        if selected_date < training_schedule.start_date or selected_date > training_schedule.end_date:
+            date_warning = True
+        else:
+            date_warning = False
 
         # Get the activities for the selected date
         target_vs_actual_absolute = training_schedule.get_target_vs_actual_absolute(selected_date)
         target_vs_actual_cumulative = training_schedule.get_target_vs_actual_cumulative(selected_date)
         
         # Format the target activities into HTML
-        target_activities_html = render_to_string('target_vs_actual.html', {'target_vs_actual_absolute': target_vs_actual_absolute, 'target_vs_actual_cumulative': target_vs_actual_cumulative})
+        target_activities_html = render_to_string('target_vs_actual.html', {'target_vs_actual_absolute': target_vs_actual_absolute, 'target_vs_actual_cumulative': target_vs_actual_cumulative, 'date': selected_date, "date_warning": date_warning, "training_schedule": training_schedule})
 
         # Return the target activities as an HTML response
         return HttpResponse(target_activities_html)
@@ -225,3 +248,22 @@ class RecordCardioActivityView(TemplateView):
             return redirect('training_schedule_detail', pk=training_schedule.pk)
 
         return self.render_to_response(self.get_context_data(form=form))
+    
+
+class ExerciseDetailView(DetailView):
+    model = models.Exercise
+    template_name = 'exercise_detail.html'
+    
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        q_objects = Q(primary_muscle_focus=self.object.primary_muscle_focus) | Q(secondary_muscle_focus=self.object.primary_muscle_focus)
+        if self.object.secondary_muscle_focus is not None:
+            q_objects |= Q(primary_muscle_focus=self.object.secondary_muscle_focus) | Q(secondary_muscle_focus=self.object.secondary_muscle_focus)
+        similar_exercises = models.Exercise.objects.filter(q_objects).exclude(id=self.object.id)
+        similar_exercises = similar_exercises.order_by('name')
+        context["similar_exercises"] = similar_exercises
+        other_exercises = models.Exercise.objects.exclude(id=self.object.id).exclude(id__in=similar_exercises)
+        other_exercises = other_exercises.order_by('name')
+        
+        context["other_exercises"] = other_exercises
+        return context

@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for ladywarcraft-fitness on 2024-08-01T11:09:37+02:00
+# fly.toml app configuration file generated for lwf on 2024-08-01T13:21:43+02:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'ladywarcraft-fitness'
+app = 'lwf'
 primary_region = 'ams'
 console_command = '/code/manage.py shell'
 

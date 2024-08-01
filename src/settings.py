@@ -30,8 +30,8 @@ SECRET_KEY = env.str("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = ["ladywarcraft-fitness.fly.dev", "localhost", "127.0.0.1"]
-CSRF_TRUSTED_ORIGINS = ["https://ladywarcraft-fitness.fly.dev"]
+ALLOWED_HOSTS = ["lwf.fly.dev", "localhost", "127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = ["https://lwf.fly.dev"]
 
 
 # Application definition

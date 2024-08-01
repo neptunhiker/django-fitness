@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import TemplateView, ListView, DetailView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import TemplateView, ListView, DetailView, CreateView
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -267,3 +268,52 @@ class ExerciseDetailView(DetailView):
         
         context["other_exercises"] = other_exercises
         return context
+    
+
+class TrainingPlanCreateView(CreateView):
+    model = models.TrainingPlan
+    template_name = 'training_plan_create.html'
+    success_url = reverse_lazy('training_plans')
+    fields = ['name', 'description']
+    
+    def form_valid(self, form):
+        training_plan = form.save(commit=False)
+        training_plan.author = self.request.user
+        training_plan.save()
+        return super().form_valid(form)
+    
+class TrainingScheduleCreateView(CreateView):
+    model = models.TrainingSchedule
+    template_name = 'training_schedule_create.html'
+    success_url = reverse_lazy('home')
+    fields = ['notes', 'training_plan', 'start_date', 'duration', 'train_on_mondays', 'train_on_tuesdays', 'train_on_wednesdays', 'train_on_thursdays', 'train_on_fridays', 'train_on_saturdays', 'train_on_sundays']
+    
+    def form_valid(self, form):
+        training_plan = form.save(commit=False)
+        training_plan.athlete = self.request.user
+        training_plan.save()
+        return super().form_valid(form)
+    
+    
+class HelpView(TemplateView):
+    template_name = 'help.html'
+    
+class ExerciseCreateView(CreateView):
+    model = models.Exercise
+    template_name = 'exercise_create.html'
+    success_url = reverse_lazy('exercise_list')
+    fields = ['name', 'description', 'primary_muscle_focus', 'secondary_muscle_focus', 'equipment', 'type']
+    
+    def form_valid(self, form):
+        exercise = form.save(commit=False)
+        exercise.author = self.request.user
+        exercise.save()
+        return super().form_valid(form)
+    
+class ExerciseListView(ListView):
+    model = models.Exercise
+    template_name = 'exercise_list.html'
+    context_object_name = 'exercises'
+    
+    def get_queryset(self):
+        return models.Exercise.objects.all().order_by('name')

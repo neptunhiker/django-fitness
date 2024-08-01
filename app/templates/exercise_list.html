@@ -1,0 +1,18 @@
+{% extends 'base_generic.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<section class="my-5">
+  <div class="container">
+    <h1><i class="fas fa-book"></i> Exercises</h1>
+    <div class="text-secondary">Below you will find a list of all available exercises. If you would like to create an additional exercise that you cannot find in the list then please go ahead and <a href="{% url 'create_exercise' %}">create a new exercise.</a></div>
+    <hr>
+    {% for exercise in exercises %}
+    <div class="my-4">
+      <div class="h3 fw-bold"><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></div>
+      <div class="text-secondary">{{ exercise.description }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

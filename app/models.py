@@ -122,8 +122,8 @@ class CardioActivity(Activity):
 
 class TrainingPlan(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=150)
-    description = models.TextField()
+    name = models.CharField(max_length=150, help_text="Name of the training plan.")
+    description = models.TextField(help_text="Description of the training plan that covers the main object of the plan.")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     author = models.ForeignKey(

@@ -1,13 +1,15 @@
 {% extends 'base_generic.html' %}
 {% block content %}
-<div class="container">
-
+<div class="container my-5">
   {% if user.is_authenticated %}
-  <div class="text-center mt-5">
-    <h2>LadyWarcraft's Fitness App</h2>
-    <p>Welcome {{ request.user }}</p>
+  <div class="text-end">
+    <a href="{% url 'create_training_schedule' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> New Training Schedule
+    </a>
   </div>
-  <h3 class="mb-4">My Training Schedules</h3>
+  <h1 class="mt-5 mb-2"><i class="fas fa-calendar"></i> My Training Schedules</h1>
+  <div class="text-secondary">A Training Schedule is your personalized implementation of a Training Plan. You will be required to do the exercises of the Training Plan including the target repetitions, weight, progression per week etc. but you can decide when you want to start, for how many weeks you want to follow the Training Plan and most importantly on how many and on which days you want to train. Before you create your own Training Schedule be sure to know on which Training Plan you want to base it on. Have a look at <a href="{% url 'training_plans' %}">our Training Plans.</a></div>
+  <hr>
   {% if training_schedules %}
   <div class="row">
     {% for training_schedule in training_schedules %}

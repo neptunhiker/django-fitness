@@ -1,0 +1,24 @@
+{% extends 'base_generic.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<section class="my-5">
+  <div class="container">
+    <div class="col-lg-8 mx-auto">
+      <div class="h1">Help</div>
+      <div class="my-4">
+        <div class="h3 fw-bold">How can I create a new exercise?</div>
+        <div class="text-secondary">You can <a href="{% url 'create_exercise' %}">create a new exercise here.</a></div>
+      </div>
+      <div class="my-4">
+      <div class="h3 fw-bold">How can I create a new equipment?</div>
+      <div class="text-secondary">Sorry, you can't at this point in time. But please reach out to Sebastian as he can do it for you in the Admin panel.</div>
+    </div>
+      <div class="my-4">
+      <div class="h3 fw-bold">How can I create a new Muscle Focus?</div>
+      <div class="text-secondary">Sorry, you can't at this point in time. But please reach out to Sebastian as he can do it for you in the Admin panel.</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

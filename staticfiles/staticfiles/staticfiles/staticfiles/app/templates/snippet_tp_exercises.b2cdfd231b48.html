@@ -1,0 +1,51 @@
+<h3>Required equipment</h3>
+{% if equipment %}
+  <ul>
+
+    {% for item in equipment %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="text-secondary">No special equipment is needed for the exercises of this Training Plan</p>
+{% endif %}
+
+<h3 class="mt-5">Exercises</h3>
+{% if trainingplan.exercises %}
+<div class="table-responsive">
+  <table class="table table-dark">
+    <thead>
+      <tr>
+        <th scope="col">Exercise</th>
+        <th class="text-center" scope="col">Starting Repetitions</th>
+        <th class="text-center" scope="col">Repetition Progression per Week</th>
+        <th class="text-center" scope="col">Starting Weight</th>
+        <th class="text-center" scope="col">Weight Progression per Week</th>
+        {% if request.user == trainingplan.author %}
+          <th class="text-center"></th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for exercise, value in exercises.items %}
+      <tr>
+        <td><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></td>
+        <td class="text-center">{{ value.0|floatformat:"-1" }}</td>
+        <td class="text-center">{{ value.1|floatformat:"-1" }}</td>
+        <td class="text-center">{{ value.2|floatformat:"-1" }}</td>
+        <td class="text-center">{{ value.3|floatformat:"-1" }}</td>
+        {% if request.user == trainingplan.author %}
+        <td class="text-center">
+          <a href="#" role="button" hx-post="{% url 'delete_exercise' trainingplan.pk exercise.name %}" hx-target="#exercises-list"  hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
+            <i class="fas fa-trash-alt text-danger"></i>
+          </a>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-secondary">No exercises have been added to the training plan yet</p>
+{% endif %}

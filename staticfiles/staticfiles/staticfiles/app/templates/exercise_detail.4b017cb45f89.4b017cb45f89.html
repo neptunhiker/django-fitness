@@ -1,0 +1,69 @@
+{% extends 'base_generic.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container py-5">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <h1 class="display-4">{{ exercise.name }}</h1>
+      {% if exercise.description %}
+        <p class="lead text-secondary">{{ exercise.description }}</p>
+      {% else %}
+        <p class="lead text-secondary">No description available</p>
+      {% endif %}
+      <hr class="my-4">
+      <h2>Primary muscle focus</h2>
+      <p class="text-secondary">{{ exercise.primary_muscle_focus }}</p>
+      <h2>Secondary muscle focus</h2>
+      <p class="text-secondary">{% if exercise.secondary_muscle_focus %}{{ exercise.secondary_muscle_focus }}{% else %}No secondary muscle focus{% endif %}</p>
+      <h2>Equipment</h2>
+      {% if exercise.equipment.all %}
+        {% if exercise.equipment.all|length > 1 %}
+        <ul>
+          {% for item in exercise.equipment.all %}
+          <li class="text-secondary">{{ item }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-secondary">{{ exercise.equipment.all.first }}</p>
+        {% endif %}
+      {% else %}
+      <p class="text-secondary">No equipment needed</p>
+      {% endif %}
+      <h2>Exercise type</h2>
+      <p class="text-secondary">{{ exercise.type }}</p>
+    </div>
+  </div>
+</div>
+<div class="container pt-5">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <h2>Similar exercises</h2>
+      {% if similar_exercises %}
+      <ul>
+        {% for exercise in similar_exercises %}
+        <li><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-secondary">No similar exercises found</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<div class="container pb-5">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <h2>Other exercises</h2>
+      {% if other_exercises %}
+      <ul>
+        {% for exercise in other_exercises %}
+        <li><a href="{{ exercise.get_absolute_url }}">{{ exercise.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-secondary">No other exercises found</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

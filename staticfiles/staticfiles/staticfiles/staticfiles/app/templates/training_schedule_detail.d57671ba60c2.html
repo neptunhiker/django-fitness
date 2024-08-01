@@ -1,0 +1,69 @@
+{% extends 'base_generic.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+<section>
+  <div class="container my-5">
+    <h1><i class="fas fa-calendar-check"></i> Training Schedule based on the Training Plan '<a href="{{ trainingschedule.training_plan.get_absolute_url }}">{{ trainingschedule.training_plan.name }}</a>'</h1>
+    <div class="h5 text-secondary">
+      <div class="my-3"><span class="fw-bold">Training period:</span> {{ trainingschedule.start_date|date:"d F y" }} - {{ trainingschedule.end_date|date:"d F y" }} ({{ trainingschedule.duration }} weeks)</div>
+      <div class="my-3"><span class="fw-bold">Training days:</span> {{ trainingschedule.get_training_days_as_string|join:", " }}</div>
+      <div class="my-3"><span class="fw-bold">Athlete:</span> {{ trainingschedule.athlete }}</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container custom-shadow bg-dark my-5 p-4 rounded">
+    <div class="h2 custom-sub-header">Workout Analysis</div>
+    <div class="my-5">
+      <div class="h3 fw-bold">Select a date</div>
+      <div class="col-8 col-md-3 col-lg-2">
+
+        <form id="dateForm" hx-get="{% url 'get-target-activities' trainingschedule.id %}" hx-trigger="change" hx-target="#targetActivities" class="form-group">
+          {% csrf_token %}
+          <label for="datePicker" class="form-label">Select Date:</label>
+          <input type="date" id="datePicker" name="date" class="form-control">
+        </form>
+      </div>
+    </div>
+    <div id="targetActivities">
+      <!-- Target activities will be loaded here -->
+      {% include 'target_vs_actual.html' %}
+    </div>
+    <div class="mt-5 mb-0">
+      <h3 class="fw-bold mb-3">Highlights</h3>
+      <div class="d-flex gap-2 flex-wrap">
+        <div class="p-3 border rounded h5">{{ trainingschedule.actual_activities|length }} training days recorded</div>
+        <div class="p-3 border rounded h5">{{ trainingschedule.get_number_of_recorded_activities }} workout activities recorded</div>
+        <div class="p-3 border rounded h5">{{ trainingschedule.get_unique_exercises_recorded|length }} different exercises recorded</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="my-5">
+  <div class="container">
+    <hr>
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-4 text-center display-5 my-3"><i class="fas fa-dumbbell"></i> </div>
+      <div class="col-12 col-md-4 text-center display-5 my-3"><i class="fas fa-hourglass-half"></i> </div>
+      <div class="col-12 col-md-4 text-center display-5 my-3"><i class="fas fa-heart"></i> </div>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-4 text-center"><a href="{% url 'record_strength_activity' trainingschedule.pk %}" class="btn btn-success">Record strength activity</a></div>
+      <div class="col-12 col-md-4 text-center"><a href="{% url 'record_isometric_activity' trainingschedule.pk %}" class="btn btn-success">Record isometric activity</a></div>
+      <div class="col-12 col-md-4 text-center"><a href="{% url 'record_cardio_activity' trainingschedule.pk %}" class="btn btn-success">Record cardio activity</a></div>
+    </div>
+  </div>
+</section>
+
+<script>
+window.onload = function() {
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('datePicker').value = today;
+};
+</script>
+{% endblock %}
